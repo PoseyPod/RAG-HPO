@@ -10,4 +10,8 @@ Currently, RAG-HPO exists in two formats: a jupyter notebook and a Flask-based a
 ](https://console.groq.com) for tests, which has a free API key and access to cloud based LLama-3.1 and other LLMs. The program should accept API keys from any cloud or local based LLM that uses the OpenAI framework. Locally stored LLMs can either be downloaded directly or run through an interface like LM-studio. 
 
 
+ 
+![image](https://github.com/user-attachments/assets/5863d790-f887-428b-b63f-c001314143af)
+
+
 
