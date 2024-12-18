@@ -20,7 +20,8 @@ This tool processes the JSON file of Human Phenotype Ontology (HPO) data, which 
 
 To run this script, users will need to make they have the following packages: json, pandas, tqdm, numpy, re, and fastembed. Users may download the requirements.txt and run the following script:
 
-'''
+
+```python
 import os
 
 def install_requirements():
@@ -39,6 +40,5 @@ def install_requirements():
 
 if __name__ == "__main__":
     install_requirements()
-'''
-
+```
 As available, we will update the HPO_addons.csv file with additional phrases we find helpful in refining RAG-HPO's precision. If you would like to contribute to this file, please email us your additions in a .csv file following the format of the original file. 
