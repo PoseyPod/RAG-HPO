@@ -1,3 +1,7 @@
+# Updates Jan 3, 2025 
+
+We updated HPO_vectorization.ipynb and RAG-HPO.ipynb to better handle variation in how LLMs respond to prompts and improved how the programs handle initialization of the LLMClient environment for accessing them through API keys. If you encounter into any issues with running the program, please feel free to contact us at the emails below!   
+
 # RAG-HPO 
 
 RAG-HPO is a Python-based tool designed to extract Human Phenotype Ontology (HPO) terms from clinical notes. It leverages large language models (LLMs) and Retrieval Augmented Generation (RAG) to provide standardized phenotypic descriptions critical for genomics and clinical research. RAG-HPO itself is not an LLM, but it utilizes LLMs provided by the user to process and annotate clinical text. 
@@ -41,24 +45,51 @@ pip install -r requirements.txt
 Or, using the provided script:
 
 ```python
-	import os
-	import sys
-	import subprocess
-	
-	def install_requirements(requirements_file="requirements.txt"):
-	    if not os.path.exists(requirements_file):
-	        print(f"Error: {requirements_file} not found.")
-	        sys.exit(1)
-	    print(f"Installing packages from {requirements_file}...")
-	    try:
-	        subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", requirements_file])
-	        print("All required packages installed successfully.")
-	    except subprocess.CalledProcessError as e:
-	        print(f"An error occurred while installing dependencies: {e}")
-	        sys.exit(1)
-	
-	if __name__ == "__main__":
-	    install_requirements()
+import os
+import sys
+import subprocess
+
+def check_python_version(min_version=(3, 7)):
+    """
+    Ensure the Python version meets the minimum requirement.
+    """
+    if sys.version_info < min_version:
+        print(f"Error: Python {'.'.join(map(str, min_version))} or higher is required.")
+        print("Please update your Python installation and try again.")
+        sys.exit(1)
+
+def install_package(package):
+    """
+    Install an individual package, handling any installation errors.
+    """
+    try:
+        print(f"Installing {package}...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+        print(f"Successfully installed {package}.")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to install {package}: {e}")
+
+def install_requirements(requirements_file="requirements.txt"):
+    """
+    Install packages from a requirements file.
+    """
+    if not os.path.exists(requirements_file):
+        print(f"Error: {requirements_file} not found.")
+        sys.exit(1)
+
+    print(f"Installing packages from {requirements_file}...")
+    with open(requirements_file, "r") as f:
+        for line in f:
+            package = line.strip()
+            if package and not package.startswith("#"):
+                install_package(package)
+    print("Finished processing requirements.")
+
+if __name__ == "__main__":
+    # Check Python version first
+    check_python_version(min_version=(3, 7))
+    # Install packages
+    install_requirements()
 ```
 
 ## Using RAG-HP0: 
