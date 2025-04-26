@@ -1,5 +1,3 @@
-Interested in receiving updates? Join our [**Mailing List**](https://forms.gle/tBNHbvMZvLroYxrr9)
-
 # Updates Apr 26, 2025 
 
 We have updated the requirements.txt file and other files to improve the installation/usage of RAG-HPO. 
@@ -13,6 +11,8 @@ RAG-HPO is a Python-based tool designed to extract Human Phenotype Ontology (HPO
 **_Note that protecting patient information and ensuring compliance with institutional guidelines and HIPAA is the end user’s responsibility._**
 
 View our article on [medRxiv](https://www.medrxiv.org/content/10.1101/2024.12.01.24318253v1)! It is also currently in review for publication. 
+Interested in receiving updates? Join our [**Mailing List**](https://forms.gle/tBNHbvMZvLroYxrr9)
+
 
 ## How RAG-HPO Works: 
 
