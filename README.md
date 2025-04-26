@@ -2,7 +2,7 @@
 
 We have updated the requirements.txt file and other files to improve the installation/usage of RAG-HPO. 
 
-**_Coming Soon: We are working on an annotator program that combines the strengths of RAG-HPO with the ability to adjust phrase selection and HPO term assignment. Check back frequently to see updates!_** 
+**_Coming Soon: We are working on an annotator program that combines the strengths of RAG-HPO with the other HPO analysis too, and builing in the ability to adjust phrase selection and HPO term assignment. Check back frequently to see updates!_** 
 
 # RAG-HPO 
 
@@ -122,6 +122,7 @@ RAG-HPO relies on a vectorized database of HPO terms. Before running the annotat
 
 ## Planned Improvements:
 
+- Annotator App: An app that combines LLM phenotype extraction with concept recognition tools and RAG to quickly and efficiently extract and assign HPO terms. This app will also allow users to manually edit their results to reduce the time needed for phenotype analysis. 
 - Containerization: A fully containerized version of RAG-HPO is under development, allowing use without manual command line interaction.
 - Enhanced Error Handling: We are continually improving error messages and recovery steps for a smoother user experience.
 
