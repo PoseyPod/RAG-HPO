@@ -36,13 +36,14 @@ RAG-HPO is a Python-based tool designed to extract Human Phenotype Ontology (HPO
 	Python installed.
 	All required packages as listed in requirements.txt.
 
-Note: RAG-HPO has been tested with [Groq.com](https://console.groq.com), which offers free API keys and access to cloud-based LLaMA-3.1 models. However, any OpenAI-compatible LLM should work, including locally hosted ones like [LM-studio](https://lmstudio.ai/).
+Note: RAG-HPO has been tested with [Groq.com](https://console.groq.com), which offers free/cheap API keys (WARNING: Do not submit sensitive or identifying information. ALWAYS de-identify your data) and access to cloud-based LLMS. However, any OpenAI-compatible LLM should work, including locally hosted ones like [LM-studio](https://lmstudio.ai/).
 
 ## Setting Up the Environment:
 
 1. Install Jupyter Notebook or [Microsoft Visual Studio Code](https://code.visualstudio.com/download).
 2. Clone this repository and navigate to its directory.
-3. Install dependencies with:
+3. create a virtual python environment(recommended). 
+4. Install dependencies with:
 
 ```bash
 pip install -r requirements.txt
