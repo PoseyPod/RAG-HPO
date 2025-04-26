@@ -1,6 +1,10 @@
-# Updates Jan 3, 2025 
+Interested in receiving updates? Join our [**Mailing List**](https://forms.gle/tBNHbvMZvLroYxrr9)
 
-We updated HPO_vectorization.ipynb and RAG-HPO.ipynb to better handle variation in how LLMs respond to prompts and improved how the programs handle initialization of the LLMClient environment for accessing them through API keys. If you encounter into any issues with running the program, please feel free to contact us at the emails below!   
+# Updates Apr 26, 2025 
+
+We have updated the requirements.txt file and other files to improve the installation/usage of RAG-HPO. 
+
+**_Coming Soon: We are working on an annotator program that combines the strengths of RAG-HPO with the ability to adjust phrase selection and HPO term assignment. Check back frequently to see updates!_** 
 
 # RAG-HPO 
 
