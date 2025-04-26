@@ -8,8 +8,7 @@ We have updated the requirements.txt file and other files to improve the install
 
 RAG-HPO is a Python-based tool designed to extract Human Phenotype Ontology (HPO) terms from clinical notes. It leverages large language models (LLMs) and Retrieval Augmented Generation (RAG) to provide standardized phenotypic descriptions critical for genomics and clinical research. RAG-HPO itself is not an LLM, but it utilizes LLMs provided by the user to process and annotate clinical text. 
 
-### **Note:**  
-**Protecting patient information and ensuring compliance with institutional guidelines and HIPAA is the end user’s responsibility.**
+### **Note: Protecting patient information and ensuring compliance with institutional guidelines and HIPAA is the end user’s responsibility.**
 
 ---
 
