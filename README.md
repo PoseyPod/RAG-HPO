@@ -2,7 +2,7 @@
 
 We have updated the requirements.txt file and other files to improve the installation/usage of RAG-HPO. 
 
-**_Coming Soon: We are working on an annotator program that combines the strengths of RAG-HPO with the other HPO analysis too, and builing in the ability to adjust phrase selection and HPO term assignment. Check back frequently to see updates!_** 
+**_Coming Soon: We are working on an annotator program that combines the strengths of RAG-HPO with the other HPO analysis too, and building in the ability to adjust phrase selection and HPO term assignment. Check back frequently to see updates!_** 
 
 # RAG-HPO 
 
