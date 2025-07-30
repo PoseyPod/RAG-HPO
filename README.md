@@ -1,8 +1,46 @@
-# Updates Apr 26, 2025 
+## Updates — July 30, 2025
 
-We have updated the requirements.txt file and other files to improve the installation/usage of RAG-HPO. 
+ **Our paper, _Improving Automated Deep Phenotyping Through Large Language Models Using Retrieval-Augmented Generation_, has been accepted for publication in _Genome Medicine_!**  
+A link to the final publication will be provided here once it becomes available. 🎉🎉
 
-**_Coming Soon: We are working on an annotator program that combines the strengths of RAG-HPO with the other HPO analysis too, and building in the ability to adjust phrase selection and HPO term assignment. Check back frequently to see updates!_** 
+In the meantime, you can access our preprint on **medRxiv**:  
+[https://www.medrxiv.org/content/10.1101/2024.12.01.24318253v1](https://www.medrxiv.org/content/10.1101/2024.12.01.24318253v1)
+
+ **If you use RAG-HPO in your work, please cite our publication!**
+
+---
+
+### RAG-HPO Updates
+
+- The **HPO vector database** has been updated for improved consistency and coverage.
+- We've added:
+  - More **phrase-to-HPO ID matches**
+  - An additional **index** with structured metadata for downstream analysis
+  - Matched **SNOMED CT** and **UMLS IDs** for many HPO terms
+  - Included **alternate HPO IDs** from the original ontology source
+
+---
+
+### Benchmarking and Evaluation Data
+
+We’ve released:
+- Test cases used in the manuscript
+- Input/output data from the analysis
+- Source code for calculating:
+  - **True Positives / False Positives / False Negatives**
+  - **Precision / Recall / F1 Scores**
+
+We welcome any feedback or comments regarding the program or datasets.
+
+---
+
+### Help Us Test the GUI!
+
+We are nearing completion of a **web-based GUI** for RAG-HPO and are actively seeking **beta testers** to try out the interface and provide feedback.
+
+If you are interested in participating, please contact:  
+📧 Jennifer Posey — [`jep2156@cumc.columbia.edu`](mailto:jep2156@cumc.columbia.edu)  
+📧 Brandon Garcia — [`brandon.garcia@bcm.edu`](mailto:brandon.garcia@bcm.edu)
 
 # RAG-HPO 
 
