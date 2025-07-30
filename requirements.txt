@@ -12,9 +12,6 @@ plotly
 umap-learn
 
 # NLP + Embeddings + LLM Support
-openai
-langchain
-langchain_groq
 faiss-cpu
 tqdm
 regex
@@ -62,3 +59,11 @@ tenacity
 backoff
 requests
 httpx
+
+
+tiktoken
+fastembed
+rapidfuzz
+tabulate
+tqdm
+sentence-transformers
