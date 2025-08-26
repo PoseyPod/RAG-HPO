@@ -1,0 +1,8 @@
+{
+  "model_type": "openai",
+  "api_key": "YOUR_GOOGLE_API_KEY",
+  "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+  "model_name": "gemini-2.5-flash-lite",
+  "temperature": 0.7,
+  "max_queries_per_minute": 3500
+}
