@@ -59,7 +59,7 @@ hp.obo
 hpo_embedded.npz
 hpo_meta.json
 hpo_terms_full.csv
-
+llm_cache.pkl
 # keep files
 !LLaMa-4-Scout.flag
 !Test_Case.csv
