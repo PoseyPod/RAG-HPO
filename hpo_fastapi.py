@@ -36,7 +36,7 @@ embedded_documents = None
 system_message_I = ""
 system_message_II = ""
 system_message_double_check = ""
-FLAG_FILE = "ollama.flag"
+FLAG_FILE = "gemini.flag"
 
 # ======================= Simple Cache =======================
 class SimpleCache:
@@ -193,16 +193,17 @@ def extract_hpo_terms(clinical_note: str) -> Dict[str, Any]:
         return final_result
 
     # --- Step 2: Filter for 'Abnormal' Phenotypes (Double-Check step is removed) ---
-    logger.info("Step 2: Skipping LLM Double-Check. Filtering for 'Abnormal' category phenotypes.")
-    # phenotypes_to_map = [
-    #     p for p in initial_phenotypes 
-    #     if isinstance(p, dict) and p.get('category') == 'Abnormal'
-    # ]
-    #logger.info(f"Found {len(phenotypes_to_map)} 'Abnormal' phenotypes to map.")
+    logger.info("Step 2:Filtering for 'Abnormal' category phenotypes.")
+    phenotypes_to_map = [
+        p for p in initial_phenotypes 
+        if isinstance(p, dict) and p.get('category') == 'Abnormal'
+    ]
+    logger.info(f"Found {len(phenotypes_to_map)} 'Abnormal' phenotypes to map.")
     
     # pass all the phenotypes from the step 1 result
-    phenotypes_to_map = [p for p in initial_phenotypes if isinstance(p, dict)]
-    logger.info(f"Found {len(phenotypes_to_map)} phenotypes to map.")
+    # phenotypes_to_map = [p for p in initial_phenotypes if isinstance(p, dict)]
+    # logger.info(f"Found {len(phenotypes_to_map)} phenotypes to map.")
+
     if not phenotypes_to_map:
         final_result['thinking_process'] = "\n\n".join(final_result['thinking_process'])
         return final_result
@@ -300,12 +301,14 @@ def check_and_initialize_llm():
         "api_key": config["api_key"],
         "base_url": config.get("base_url"),
         "model_name": config.get("model_name"),
-        "temperature": config.get("temperature", 0.7),
+        "temperature": config.get("temperature", 0.2),
         "max_tokens_per_day": config.get("max_tokens_per_day", -1),
         "max_queries_per_minute": config.get("max_queries_per_minute", 60),
-        "max_tokens_per_minute": config.get("max_tokens_per_minute", 4000000),
-        "think": config.get("think", False)  # Add think parameter for Ollama
+        "max_tokens_per_minute": config.get("max_tokens_per_minute", 4000000)
     }
+    
+    if config.get("think", False):
+        common_args['think'] = config.get("think", False)
 
     if model_type == "openai":
         return OpenAICompatibleClient(**common_args)
