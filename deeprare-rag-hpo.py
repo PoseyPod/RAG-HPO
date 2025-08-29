@@ -40,8 +40,14 @@ FLAG_FILE = "gemini.flag"
 
 # --- [修改 1/4]: 新增全域變數來儲存設定 ---
 app_config: Dict[str, Any] = {}
-embedding_model_name: str = ""
+embedding_model_name = 'pritamdeka/SapBERT-mnli-snli-scinli-scitail-mednli-stsb'
+#embedding_model_name = 'FremyCompany/BioLORD-2023'
+#meta_path = 'deeprare_hpo_meta.json'
+meta_path = 'hpo_meta.json'
+#vec_path= 'deeprare_hpo_embedded.npz'
+vec_path= 'hpo_embedded.npz'
 
+system_prompt_path = "deeprare_system_prompts.json"
 
 # ====================== LLM Output Schema ======================#
 class HPOPhenotype(BaseModel):
@@ -63,6 +69,7 @@ class SimpleCache:
     def __init__(self, cache_file: str = "llm_cache.pkl"):
         self.cache_file = cache_file
         self.cache = self._load_cache()
+
     def _load_cache(self) -> dict:
         if os.path.exists(self.cache_file):
             try:
@@ -70,6 +77,7 @@ class SimpleCache:
                     return pickle.load(f)
             except: return {}
         return {}
+    
     def _save_cache(self):
         try:
             with open(f"{self.cache_file}.tmp", 'wb') as f:
@@ -77,20 +85,25 @@ class SimpleCache:
             os.replace(f"{self.cache_file}.tmp", self.cache_file)
         except Exception as e:
             logger.warning(f"Failed to save cache: {e}")
+
     def get(self, text: str, pipeline_key: str) -> Optional[Any]:
         key = hashlib.md5(f"{text}||{pipeline_key}".encode()).hexdigest()
         return self.cache.get(key)
+    
     def set(self, text: str, pipeline_key: str, response: Any):
         key = hashlib.md5(f"{text}||{pipeline_key}".encode()).hexdigest()
         self.cache[key] = response
         if len(self.cache) % 10 == 0:
             self._save_cache()
+
     def size(self) -> int:
         return len(self.cache)
+    
     def clear(self):
         self.cache.clear()
         if os.path.exists(self.cache_file):
             os.remove(self.cache_file)
+
 cache = SimpleCache()
 
 # ======================= Utility Functions =======================
@@ -101,6 +114,7 @@ def clean_note(text: str) -> str:
     text = re.sub(r'[^\x00-\x7F]+', ' ', text)
     text = re.sub(r'\s+', ' ', text).strip()
     return text
+
 def _safe_json_loads(text: str) -> Optional[Dict]:
     if not text: return None
     text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
@@ -125,6 +139,7 @@ def _safe_json_loads(text: str) -> Optional[Dict]:
             try: return json.loads(object_match.group(0))
             except json.JSONDecodeError: pass
     return None
+
 def load_vector_db(meta_path: str = 'hpo_meta.json', vec_path: str = 'hpo_embedded.npz'):
     if not os.path.exists(meta_path) or not os.path.exists(vec_path):
         raise FileNotFoundError(f"DB files not found: {meta_path}, {vec_path}")
@@ -137,14 +152,27 @@ def load_vector_db(meta_path: str = 'hpo_meta.json', vec_path: str = 'hpo_embedd
     for entry, vec in zip(entries, emb_matrix):
         docs.append({'hp_id': entry.get('hp_id'), 'info': entry.get('info'), 'embedding': vec})
     return docs, emb_matrix
+
 def create_faiss_index(emb_matrix: np.ndarray):
     dim = emb_matrix.shape[1]
     faiss.normalize_L2(emb_matrix)
     index = faiss.IndexFlatIP(dim)
     index.add(emb_matrix)
     return index
+
+PAT_CLEAN = re.compile(r'\s*\([^)]*\)\s*')
+def clean_query_text(txt: str) -> str:
+    txt = PAT_CLEAN.sub(' ', txt)
+    txt = re.sub(r'\s+', ' ', txt).strip().lower()
+    txt = re.sub(r'[^\w\s]+$', '', txt)
+    return txt
+
 def embed_query(text: str, model):
-    vec = model.encode(text, convert_to_numpy=True)
+    """Embed query text after cleaning."""
+    # 在嵌入前，先進行清理
+    cleaned_text = clean_query_text(text)
+    
+    vec = model.encode(cleaned_text, convert_to_numpy=True)
     if vec.ndim == 1:
         vec = vec.reshape(1, -1)
     faiss.normalize_L2(vec)
@@ -243,6 +271,7 @@ def extract_hpo_terms_structured(clinical_note: str) -> Dict[str, Any]:
     cache.set(clinical_note, PIPELINE_KEY, final_result)
     logger.info(f"Cached structured result with {len(final_hpo_terms)} HPO terms")
     return final_result
+
 def extract_thinking_from_content(content: str) -> tuple:
     if not content: return "", ""
     try:
@@ -295,12 +324,14 @@ async def lifespan(app: FastAPI):
     global llm_client, embeddings_model, faiss_index, embedded_documents
     global system_message_extract, system_message_normalize
     global app_config, embedding_model_name  # 宣告要修改全域變數
+    global meta_path, vec_path
+    global system_prompt_path
     
     logger.info("Starting HPO Extraction API...")
     
     try:
         # 1. 載入 system prompts
-        with open("deeprare_system_prompts.json", "r") as f:
+        with open(system_prompt_path, "r") as f:
             prompts = json.load(f)
         system_message_extract = prompts.get("system_message_extract", "")
         system_message_normalize = prompts.get("system_message_normalize", "")
@@ -318,11 +349,10 @@ async def lifespan(app: FastAPI):
         llm_client = check_and_initialize_llm(app_config)
         
         # 4. 初始化 Embedding Model 並儲存名稱
-        embedding_model_name = 'pritamdeka/SapBERT-mnli-snli-scinli-scitail-mednli-stsb'
         embeddings_model = SentenceTransformer(embedding_model_name)
         
         # 5. 載入向量資料庫
-        docs, emb_matrix = load_vector_db()
+        docs, emb_matrix = load_vector_db(meta_path, vec_path)
         embedded_documents = docs
         faiss_index = create_faiss_index(emb_matrix)
         

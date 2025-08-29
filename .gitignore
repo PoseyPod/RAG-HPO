@@ -56,11 +56,11 @@ temp/
 # jupyter cache
 .ipynb_checkpoints/
 # Large model files (these should be mounted as volumes)
-hp.obo
-hpo_embedded.npz
-hpo_meta.json
-hpo_terms_full.csv
-llm_cache.pkl
+*hp.obo
+*hpo_embedded.npz
+*hpo_meta.json
+*hpo_terms_full.csv
+*llm_cache.pkl
 # keep files
 !LLaMa-4-Scout.flag
 !Test_Case.csv
