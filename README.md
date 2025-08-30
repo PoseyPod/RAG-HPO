@@ -1,10 +1,8 @@
 ## Updates — July 30, 2025
 
  **Our paper, _Improving Automated Deep Phenotyping Through Large Language Models Using Retrieval-Augmented Generation_, has been accepted for publication in _Genome Medicine_!**  
-A link to the final publication will be provided here once it becomes available. 🎉🎉
 
-In the meantime, you can access our preprint on **medRxiv**:  
-[https://www.medrxiv.org/content/10.1101/2024.12.01.24318253v1](https://www.medrxiv.org/content/10.1101/2024.12.01.24318253v1)
+[https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-025-01521-w](https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-025-01521-w)
 
  **If you use RAG-HPO in your work, please cite our publication!**
 
