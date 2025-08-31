@@ -22,7 +22,6 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List
-#from llm_clients import OpenAICompatibleClient, LangchainGeminiClient, OllamaClient, vLLMClient
 from langchain_llm_clients import LangchainOpenAIClient, LangchainGeminiClient, LangchainOllamaClient, LangchainVLLMClient
 import logging
 
@@ -35,9 +34,10 @@ llm_client = None
 embeddings_model = None
 faiss_index = None
 embedded_documents = None
+model_type = None
 system_message_extract = ""
 system_message_normalize = ""
-FLAG_FILE = "gemini.flag"
+
 
 # --- [修改 1/4]: 新增全域變數來儲存設定 ---
 app_config: Dict[str, Any] = {}
@@ -48,8 +48,11 @@ meta_path = 'hpo_meta.json'
 #vec_path= 'deeprare_hpo_embedded.npz'
 vec_path= 'hpo_embedded.npz'
 
-#system_prompt_path = "deeprare_system_prompts.json"
-# system_prompt_path = "openai_system_prompts.json"
+system_prompt_path = "openai_system_prompts.json"
+FLAG_FILE = "openai.flag"
+
+# system_prompt_path = "gemini_system_prompts.json"
+# FLAG_FILE = "gemini.flag"
 
 # ====================== LLM Output Schema ======================#
 class HPOPhenotype(BaseModel):
@@ -181,97 +184,55 @@ def embed_query(text: str, model):
     return vec
 
 # ======================= Updated HPO Extraction Function =======================
+# ... (此區塊程式碼不變)
 def extract_hpo_terms_structured(clinical_note: str) -> Dict[str, Any]:
     global llm_client, embeddings_model, faiss_index, embedded_documents
-    global system_message_extract, system_message_normalize
+    global system_message_extract, system_message_normalize, model_type
     PIPELINE_KEY = "hpo_pipeline_v2.1_structured_output"
     clinical_note = clean_note(clinical_note)
     cached_response = cache.get(clinical_note, PIPELINE_KEY)
     if cached_response:
         logger.info("Using cached final result for the structured pipeline.")
         return cached_response
-    
     final_result = {'hpo_terms': [], 'thinking_process': []}
-    logger.info("Step 1: Extracting phenotypes")
+    logger.info("Step 1: Extracting phenotypes using structured output")
     extracted_phenotypes = []
-
-    # 1. 根據 llm_client.think 的狀態選擇正確的 prompt 模板
-    prompt_key = "with_think" if hasattr(llm_client, 'think') and llm_client.think else "default"
-    active_prompt_extract_template = system_message_extract.get(prompt_key, system_message_extract.get("default"))
-    active_prompt_normalize_template = system_message_normalize.get(prompt_key, system_message_normalize.get("default"))
-
     try:
-        raw_response_extract_full = ""
-        # 2. 兼容性檢查：優先使用 client 自帶的結構化輸出方法
-        if hasattr(llm_client, 'query_structured'):
-            logger.info("Using structured output method for extraction.")
-            # 對於支援的 client (如 Gemini)，直接傳遞 prompt 和使用者輸入
-            # Gemini API 通常能更好地處理包含 placeholder 的指令
-            raw_response_extract_full = llm_client.query_structured(
-                user_input=clinical_note, 
-                system_message=active_prompt_extract_template,
-                response_schema=HPOExtractionResult
-            )
+        if model_type == 'gemini':
+            raw_response_extract = llm_client.query(clinical_note, system_message_extract, response_schema=HPOExtractionResult)
         else:
-            logger.info("Using standard query method with prompt formatting for extraction.")
-            # 對於通用 client (如 OpenAI)，手動將病歷填入 prompt 模板
-            if '{case_report}' in active_prompt_extract_template:
-                prompt_for_llm = active_prompt_extract_template.format(case_report=clinical_note)
-                raw_response_extract_full = llm_client.query(user_input=prompt_for_llm, system_message="")
-            else:
-                # 為不含 placeholder 的舊 prompt 提供備用路徑
-                raw_response_extract_full = llm_client.query(user_input=clinical_note, system_message=active_prompt_extract_template)
-
-        # 3. 解析 LLM 回應
-        thinking, raw_response_extract = extract_thinking_from_content(raw_response_extract_full)
-        if thinking:
-            final_result['thinking_process'].append(f"--- Step 1: Extraction Thinking ---\n{thinking}")
-
-        final_result['thinking_process'].append(f"--- Step 1: Extraction ---\nRaw response length: {len(str(raw_response_extract))} chars")
+            raw_response_extract = llm_client.query(clinical_note, system_message_extract)
+        final_result['thinking_process'].append(f"--- Step 1: Structured Extraction ---\nRaw response length: {len(str(raw_response_extract))} chars")
         parsed_extract = _safe_json_loads(raw_response_extract)
-        
-        # 增強的解析邏輯，兼容多種可能的 JSON 格式
         if isinstance(parsed_extract, dict) and 'phenotypes' in parsed_extract:
             extracted_phenotypes = parsed_extract['phenotypes']
         elif isinstance(parsed_extract, list):
-            extracted_phenotypes = parsed_extract
-        elif isinstance(parsed_extract, dict) and 'HPO' in parsed_extract:
-            extracted_phenotypes = [parsed_extract]
-
+            for item in parsed_extract:
+                if isinstance(item, dict) and 'HPO' in item and 'Phenotype' in item:
+                    extracted_phenotypes.append(item)
     except Exception as e:
         logger.error(f"Structured extraction failed: {e}", exc_info=True)
         final_result['thinking_process'].append(f"Extraction error: {e}")
         final_result['thinking_process'] = "\n\n".join(final_result['thinking_process'])
         return final_result
-    
     if not extracted_phenotypes:
         logger.warning("No phenotypes extracted in structured Step 1.")
         final_result['thinking_process'].append("No phenotypes extracted.")
         final_result['thinking_process'] = "\n\n".join(final_result['thinking_process'])
         return final_result
-    
     logger.info(f"Structured extraction found {len(extracted_phenotypes)} phenotypes")
     final_result['thinking_process'].append(f"Extracted {len(extracted_phenotypes)} phenotypes successfully")
-    
-    # --- Step 2: Normalization ---
-    logger.info("Step 2: Normalizing phenotypes")
+    logger.info("Step 2: Normalizing phenotypes using structured output")
     normalized_phenotypes = []
     for i, phenotype in enumerate(extracted_phenotypes):
         phenotype_desc = phenotype.get('Phenotype', '') if isinstance(phenotype, dict) else str(phenotype)
         if not phenotype_desc.strip(): continue
         try:
-            raw_normalized_response_full = ""
-            if hasattr(llm_client, 'query_structured'):
-                raw_normalized_response_full = llm_client.query_structured(user_input=phenotype_desc, system_message=active_prompt_normalize_template, response_schema=PhenotypeNormalization)
+            if model_type == 'gemini':
+                raw_normalized_response = llm_client.query(user_input=phenotype_desc, system_message=system_message_normalize, response_schema=PhenotypeNormalization)
             else:
-                raw_normalized_response_full = llm_client.query(user_input=phenotype_desc, system_message=active_prompt_normalize_template)
-            
-            thinking_norm, raw_normalized_response = extract_thinking_from_content(raw_normalized_response_full)
-            if thinking_norm:
-                final_result['thinking_process'].append(f"--- Step 2 Normalize '{phenotype_desc}' Thinking ---\n{thinking_norm}")
-
+                raw_normalized_response = llm_client.query(phenotype_desc, system_message_normalize)
             normalized_response = _safe_json_loads(raw_normalized_response)
-            
             if (isinstance(normalized_response, dict) and normalized_response.get('hpo_term') and normalized_response.get('hpo_term') != 'none'):
                 normalized_phenotypes.append({'original_term': normalized_response.get('original_term', phenotype_desc), 'hpo_term': normalized_response.get('hpo_term')})
                 final_result['thinking_process'].append(f"--- Step 2 Normalize '{phenotype_desc}' ---\nNormalized to: {normalized_response.get('hpo_term')}")
@@ -281,16 +242,12 @@ def extract_hpo_terms_structured(clinical_note: str) -> Dict[str, Any]:
             logger.error(f"Normalization failed for '{phenotype_desc}': {e}")
             final_result['thinking_process'].append(f"--- Step 2 Normalize '{phenotype_desc}' ---\nNormalization error: {e}")
             continue
-            
     if not normalized_phenotypes:
         logger.warning("No phenotypes normalized in structured Step 2.")
         final_result['thinking_process'].append("No phenotypes successfully normalized.")
         final_result['thinking_process'] = "\n\n".join(final_result['thinking_process'])
         return final_result
-        
     logger.info(f"Structured normalization completed: {len(normalized_phenotypes)} phenotypes")
-
-    # --- Step 3: Vector retrieval ---
     logger.info("Step 3: Vector retrieval for normalized phenotypes")
     final_hpo_terms = []
     for normalized in normalized_phenotypes:
@@ -314,7 +271,6 @@ def extract_hpo_terms_structured(clinical_note: str) -> Dict[str, Any]:
         except Exception as e:
             logger.error(f"Vector retrieval failed for '{hpo_term}': {e}")
             final_result['thinking_process'].append(f"--- Step 3 Retrieval for '{hpo_term}' ---\n❌ Retrieval error: {e}")
-            
     final_result['hpo_terms'] = final_hpo_terms
     final_result['thinking_process'] = "\n\n".join(final_result['thinking_process'])
     cache.set(clinical_note, PIPELINE_KEY, final_result)
@@ -341,10 +297,12 @@ def extract_thinking_from_content(content: str) -> tuple:
 # --- [修改 2/4]: 修改此函數，使其接收 config 字典 ---
 def check_and_initialize_llm(config: Dict[str, Any]):
     """Initialize LLM client from a config dictionary"""
+    global model_type
+
     model_type = config.get("model_type")
     
-    # 建立一個基礎參數字典，包含所有客戶端都支援的參數
-    base_args = {
+    # 從傳入的 config 字典中準備參數
+    common_args = {
         "api_key": config.get("api_key"),
         "base_url": config.get("base_url"),
         "model_name": config.get("model_name"),
@@ -352,90 +310,56 @@ def check_and_initialize_llm(config: Dict[str, Any]):
         "max_tokens_per_day": config.get("max_tokens_per_day", -1),
         "max_queries_per_minute": config.get("max_queries_per_minute", 60),
         "max_tokens_per_minute": config.get("max_tokens_per_minute", 4000000),
+        "think": config.get("think", False)
     }
     
-    # 根據模型類型，有條件地添加特定參數
     if model_type == "openai":
-        # OpenAI Client 不接受 'think' 參數
-        return LangchainOpenAIClient(**base_args)
-    elif model_type == "vllm":
-        # vLLM (透過 ChatOpenAI) 也不接受 'think' 參數
-        return LangchainVLLMClient(**base_args)
+        del common_args['think']
+        return LangchainOpenAIClient(**common_args)
     elif model_type == "gemini":
-        # Gemini Client 的 __init__ 方法可以處理 'think' 參數
-        gemini_args = base_args.copy()
-        gemini_args["think"] = config.get("think", False)
-        return LangchainGeminiClient(**gemini_args)
+        return LangchainGeminiClient(**common_args)
     elif model_type == "ollama":
-        # Ollama Client 的 __init__ 方法可以處理 'think' 參數
-        ollama_args = base_args.copy()
-        ollama_args["think"] = config.get("think", False)
-        return LangchainOllamaClient(**ollama_args)
+        return LangchainOllamaClient(**common_args)
+    elif model_type == "vllm":
+        return LangchainVLLMClient(**common_args)
     else:
         raise ValueError(f"Invalid model_type: {model_type}")
 
-## ======================= Startup/Shutdown =======================
+# ======================= Startup/Shutdown =======================
+# --- [修改 3/4]: 重構 lifespan 以載入所有設定 ---
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global llm_client, embeddings_model, faiss_index, embedded_documents
     global system_message_extract, system_message_normalize
-    global app_config, embedding_model_name
+    global app_config, embedding_model_name  # 宣告要修改全域變數
     global meta_path, vec_path
+    global system_prompt_path
     
     logger.info("Starting HPO Extraction API...")
     
     try:
-        # --- [修改] 動態載入 Prompt 檔案的邏輯 ---
+        # 1. 載入 system prompts
+        with open(system_prompt_path, "r") as f:
+            prompts = json.load(f)
+        system_message_extract = prompts.get("system_message_extract", "")
+        system_message_normalize = prompts.get("system_message_normalize", "")
+        
+        if not all([system_message_extract, system_message_normalize]):
+            raise ValueError("system_message_extract or system_message_normalize are missing from system_prompts.json")
 
-        # 1. 首先載入 .flag 設定檔，以確定 model_type
+        # 2. 載入 .flag 設定檔並存到全域變數
         if not os.path.exists(FLAG_FILE):
             raise FileNotFoundError(f"Flag file '{FLAG_FILE}' not found.")
         with open(FLAG_FILE, "r") as f:
             app_config = json.load(f)
 
-        model_type = app_config.get("model_type")
-        
-        # 2. 根據 model_type 決定要使用哪個 prompt 檔案
-        #    您可以根據需要擴充這個對應字典
-        prompt_file_map = {
-            "openai": "openai_system_prompts.json",
-            "gemini": "gemini_system_prompts.json" 
-        }
-        default_prompt_file = "deeprare_system_prompts.json" # 當找不到特定檔案時的預設選項
-
-        prompt_file_to_use = prompt_file_map.get(model_type, default_prompt_file)
-
-        # 3. 檢查特定檔案是否存在，如果不存在則使用預設檔案
-        if not os.path.exists(prompt_file_to_use):
-            logger.warning(
-                f"Specific prompt file '{prompt_file_to_use}' for model type '{model_type}' not found. "
-                f"Falling back to default file '{default_prompt_file}'."
-            )
-            prompt_file_to_use = default_prompt_file
-            if not os.path.exists(prompt_file_to_use):
-                raise FileNotFoundError(f"Default prompt file '{default_prompt_file}' is also missing.")
-
-        # 4. 載入決定好的 prompt 檔案
-        logger.info(f"Loading system prompts from: '{prompt_file_to_use}'")
-        with open(prompt_file_to_use, "r", encoding='utf-8') as f:
-            prompts = json.load(f)
-        
-        system_message_extract = prompts.get("system_message_extract", {})
-        system_message_normalize = prompts.get("system_message_normalize", {})
-        
-        if not all([system_message_extract.get("default"), system_message_normalize.get("default")]):
-            raise ValueError(f"'default' prompts are missing from the loaded file: {prompt_file_to_use}")
-
-        # --- [修改結束] ---
-
-        # 後續的初始化流程保持不變
-        # 5. 初始化 LLM Client
+        # 3. 初始化 LLM Client (傳入已載入的 config)
         llm_client = check_and_initialize_llm(app_config)
         
-        # 6. 初始化 Embedding Model
+        # 4. 初始化 Embedding Model 並儲存名稱
         embeddings_model = SentenceTransformer(embedding_model_name)
         
-        # 7. 載入向量資料庫
+        # 5. 載入向量資料庫
         docs, emb_matrix = load_vector_db(meta_path, vec_path)
         embedded_documents = docs
         faiss_index = create_faiss_index(emb_matrix)
@@ -634,4 +558,4 @@ async def cache_stats():
     return {"cache_size": cache.size(), "cache_file_exists": os.path.exists(cache.cache_file)}
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8444, reload=False)
+    uvicorn.run(app, host="0.0.0.0", port=8555, reload=False)
