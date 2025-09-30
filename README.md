@@ -1,4 +1,6 @@
-## Updates — July 30, 2025
+## Updates — Sept. 30, 2025
+
+Based on user feedback, we have uploaded a new file that provides clearer alignment between cases, manual annotations, and results. The file is organized into sheets that contain well-matched information, allowing users to more easily compare outputs and trace findings across sources. This update ensures that results can be understood in context, reduces confusion, and improves the overall usability of the dataset.
 
  **Our paper, _Improving Automated Deep Phenotyping Through Large Language Models Using Retrieval-Augmented Generation_, has been accepted for publication in _Genome Medicine_!**  
 
