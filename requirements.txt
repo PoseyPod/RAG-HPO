@@ -1,17 +1,23 @@
+# ==========================
 # Core Scientific Libraries
+# ==========================
 numpy
 pandas
 scipy
 scikit-learn
 statsmodels
 
+# ==========================
 # Visualization
+# ==========================
 matplotlib
 seaborn
 plotly
 umap-learn
 
+# ==========================
 # NLP + Embeddings + LLM Support
+# ==========================
 faiss-cpu
 tqdm
 regex
@@ -19,26 +25,37 @@ jsonlines
 fastembed
 transformers
 sentence-transformers
+tiktoken
 
+# ==========================
 # Dash App Framework
+# ==========================
 dash
 dash-bootstrap-components
 flask
 
+# ==========================
 # Excel / CSV Handling
+# ==========================
 openpyxl
 xlrd
 xlsxwriter
 
+# ==========================
 # Ontology, Graphs, and JSON Parsing
+# ==========================
 networkx
 rdflib
 jsonschema
 
+# ==========================
 # File & System Utilities
+# ==========================
 python-dotenv
 
+# ==========================
 # Data Cleaning & Matching
+# ==========================
 fuzzywuzzy
 python-Levenshtein
 rapidfuzz
@@ -46,24 +63,20 @@ unidecode
 ratelimit
 tabulate
 
+# ==========================
 # Testing and Debugging
+# ==========================
 pytest
 ipython
 jupyter
 notebook
 
+# ==========================
 # Optional (used in RAG workflows)
+# ==========================
 pyyaml
 aiohttp
 tenacity
 backoff
 requests
 httpx
-
-
-tiktoken
-fastembed
-rapidfuzz
-tabulate
-tqdm
-sentence-transformers
